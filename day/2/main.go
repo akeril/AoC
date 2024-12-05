@@ -15,7 +15,7 @@ func main() {
 func calcSafeReports(lines []string) int {
 	totalSafeReports := 0
 	for _, line := range lines {
-		report := utl.ToIntArr(line)
+		report := utl.ToIntArr(line, " ")
 		if isReportSafe(report) || isReportDampened(report) {
 			totalSafeReports += 1
 		}

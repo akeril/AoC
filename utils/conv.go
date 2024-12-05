@@ -13,9 +13,9 @@ func ToInt(s string) int {
 	return i
 }
 
-func ToIntArr(s string) []int {
+func ToIntArr(s string, sep string) []int {
 	var result []int
-	for _, num := range strings.Split(s, " ") {
+	for _, num := range strings.Split(s, sep) {
 		result = append(result, ToInt(num))
 	}
 	return result
