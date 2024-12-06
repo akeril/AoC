@@ -21,6 +21,14 @@ func ToIntArr(s string, sep string) []int {
 	return result
 }
 
+func ToArr2D(ss []string) [][]rune {
+	var result [][]rune
+	for _, s := range ss {
+		result = append(result, []rune(s))
+	}
+	return result
+}
+
 func Abs(x int) int {
 	if x < 0 {
 		x = -x
