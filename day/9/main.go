@@ -15,7 +15,7 @@ func main() {
 }
 
 type Block struct {
-	pos, id int
+	pos, id, freq int
 }
 
 func (b Block) Compare(o Block) int {
@@ -24,13 +24,15 @@ func (b Block) Compare(o Block) int {
 
 type FileSystem struct {
 	FileBlocks []Block
-	FreeBlocks []int
+	FreeBlocks []Block
 }
 
 func (fs *FileSystem) CheckSum() int {
 	checksum := 0
 	for _, block := range fs.FileBlocks {
-		checksum += block.id * block.pos
+		for k := 0; k < block.freq; k++ {
+			checksum += block.id * (block.pos + k)
+		}
 	}
 	return checksum
 }
@@ -39,21 +41,15 @@ func ParseInput(input string) FileSystem {
 	p := 0
 	i := 0
 	free := false
-	fs := FileSystem{FileBlocks: make([]Block, 0), FreeBlocks: make([]int, 0)}
+	fs := FileSystem{FileBlocks: make([]Block, 0), FreeBlocks: make([]Block, 0)}
 	for _, c := range input {
 		k := int(c - '0')
 		if free {
-			for k > 0 {
-				fs.FreeBlocks = append(fs.FreeBlocks, p)
-				p++
-				k--
-			}
+			fs.FreeBlocks = append(fs.FreeBlocks, Block{pos: p, freq: k})
+			p += k
 		} else {
-			for k > 0 {
-				fs.FileBlocks = append(fs.FileBlocks, Block{pos: p, id: i})
-				p++
-				k--
-			}
+			fs.FileBlocks = append(fs.FileBlocks, Block{pos: p, id: i, freq: k})
+			p += k
 			i++
 		}
 		free = !free
@@ -62,14 +58,16 @@ func ParseInput(input string) FileSystem {
 }
 
 func CompactFS(fs FileSystem) FileSystem {
-	i := 0
-	j := len(fs.FileBlocks) - 1
-
-	for fs.FreeBlocks[i] < fs.FileBlocks[j].pos {
-		fs.FileBlocks[j].pos, fs.FreeBlocks[i] = fs.FreeBlocks[i], fs.FileBlocks[j].pos
-		i++
-		j--
+	for j := len(fs.FileBlocks) - 1; j >= 0; j-- {
+		// find valid block
+		for i := 0; i < len(fs.FreeBlocks); i++ {
+			if fs.FreeBlocks[i].pos < fs.FileBlocks[j].pos && fs.FreeBlocks[i].freq >= fs.FileBlocks[j].freq {
+				fs.FileBlocks[j].pos = fs.FreeBlocks[i].pos
+				fs.FreeBlocks[i].pos += fs.FileBlocks[j].freq
+				fs.FreeBlocks[i].freq -= fs.FileBlocks[j].freq
+				break
+			}
+		}
 	}
-
 	return fs
 }
