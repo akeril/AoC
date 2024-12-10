@@ -14,9 +14,8 @@ func main() {
 	count := 0
 	for i, row := range matrix {
 		for j := range row {
-			visited := make(map[move]bool)
-			dfs(matrix, i, j, '0', visited)
-			count += len(visited)
+			trails := dfs(matrix, i, j, '0')
+			count += trails
 		}
 	}
 	fmt.Println(count)
@@ -26,23 +25,23 @@ type move struct {
 	x, y int
 }
 
-func dfs(matrix [][]rune, i, j int, c rune, mp map[move]bool) {
+func dfs(matrix [][]rune, i, j int, c rune) int {
 	if !inBound(matrix, i, j) {
-		return
+		return 0
 	}
 	if matrix[i][j] != c {
-		return
+		return 0
 	}
 	if matrix[i][j] == '9' {
-		mp[move{i, j}] = true
-		return
+		return 1
 	}
 
+	total := 0
 	moves := []move{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 	for _, m := range moves {
-		dfs(matrix, i+m.x, j+m.y, matrix[i][j]+1, mp)
+		total += dfs(matrix, i+m.x, j+m.y, matrix[i][j]+1)
 	}
-	return
+	return total
 }
 
 func inBound(matrix [][]rune, i, j int) bool {
