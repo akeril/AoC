@@ -9,26 +9,25 @@ import (
 
 func main() {
 	input := utils.ReadFile("input")
-	stk1 := New()
-	stk2 := New()
-	PushArr(stk1, utils.ToIntArr(input[0], " "))
+	mp := make(map[int]int)
+	for _, stone := range utils.ToIntArr(input[0], " ") {
+		mp[stone] = 1
+	}
 
-	stk1.Print()
 	for i := 0; i < 75; i++ {
-		fmt.Println(i)
-		stk1, stk2 = stk2, stk1
-		for stk2.Len() != 0 {
-			v := stk2.Pop().(int)
-			PushArr(stk1, Transform(v))
+		m := make(map[int]int)
+		for stone, count := range mp {
+			for _, s := range Transform(stone) {
+				m[s] += count
+			}
 		}
+		mp = m
 	}
-	fmt.Println(stk1.Len())
-}
-
-func PushArr(stk *Stack, arr []int) {
-	for _, v := range arr {
-		stk.Push(v)
+	count := 0
+	for _, v := range mp {
+		count += v
 	}
+	fmt.Println(count)
 }
 
 func Transform(x int) []int {
