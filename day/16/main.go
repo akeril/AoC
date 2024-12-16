@@ -13,57 +13,75 @@ func main() {
 	matrix := utils.ToArr2D(input)
 
 	p := Start(matrix)
-	fmt.Println(search(matrix, p))
+	cost := search(matrix, p)
+	fmt.Println(cost)
 }
 
-func search(matrix [][]rune, p Pos) int {
-	pq := make(PriorityQueue, 0)
-	visited := make(map[Pos]bool)
+type Position struct {
+	p Point
+	d Direction
+}
 
-	cost := 99999999
+func search(matrix [][]rune, p Point) int {
+	pq := make(PriorityQueue, 0)
+	best := make(map[Position]int)
+	paths := make([]Point, 0)
+	max_cost := int(1e9)
+
 	heap.Init(&pq)
-	heap.Push(&pq, &Item{cost: 0, pos: p})
+	heap.Push(&pq, &Item{cost: 0, pos: p, dir: "E", path: []Point{}})
 	for len(pq) > 0 {
 		i := heap.Pop(&pq).(*Item)
-		p := i.pos
+		cost, p, d := i.cost, i.pos, i.dir
+		path := Copy(i.path, p)
 
 		if matrix[p.x][p.y] == '#' {
 			continue
 		}
 
-		if _, ok := visited[p]; ok {
+		if cost > max_cost {
 			continue
 		}
-		visited[p] = true
 
-		if i.cost > cost {
+		if c, ok := best[Position{p, d}]; ok && cost > c {
 			continue
 		}
+		best[Position{p, d}] = cost
 
 		if matrix[p.x][p.y] == 'E' {
-			cost = min(cost, i.cost)
-			continue
+			paths = append(paths, path...)
+			max_cost = cost
 		}
-		i1 := Item{pos: p.Move(p.d), cost: i.cost + 1}
-		i2 := Item{pos: p.Move(p.d.TurnLeft()), cost: i.cost + 1001}
-		i3 := Item{pos: p.Move(p.d.TurnRight()), cost: i.cost + 1001}
+
+		i1 := Item{pos: p.Move(d), dir: d, cost: i.cost + 1, path: path}
+		i2 := Item{pos: p.Move(d.TurnLeft()), dir: d.TurnLeft(), cost: i.cost + 1001, path: path}
+		i3 := Item{pos: p.Move(d.TurnRight()), dir: d.TurnRight(), cost: i.cost + 1001, path: path}
 
 		heap.Push(&pq, &i1)
 		heap.Push(&pq, &i2)
 		heap.Push(&pq, &i3)
 	}
 
-	return cost
+	seen := make(map[Point]bool)
+	for _, p := range paths {
+		seen[p] = true
+	}
+	fmt.Println(len(seen))
+	return max_cost
 }
 
-type Pos struct {
+func Copy(slice []Point, p Point) []Point {
+	res := make([]Point, len(slice))
+	copy(res, slice)
+	return append(res, p)
+}
+
+type Point struct {
 	x, y int
-	d    Direction
 }
 
-func (p Pos) Move(d Direction) Pos {
-	p.d = d
-	return Pos{p.x + p.d.Move().dx, p.y + p.d.Move().dy, p.d}
+func (p Point) Move(d Direction) Point {
+	return Point{p.x + d.Move().dx, p.y + d.Move().dy}
 }
 
 type Move struct {
@@ -117,11 +135,11 @@ func (d Direction) Move() Move {
 	}
 }
 
-func Start(matrix [][]rune) Pos {
+func Start(matrix [][]rune) Point {
 	for i, row := range matrix {
 		for j, c := range row {
 			if c == 'S' {
-				return Pos{i, j, "E"}
+				return Point{i, j}
 			}
 		}
 	}

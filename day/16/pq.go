@@ -2,7 +2,9 @@ package main
 
 type Item struct {
 	cost int
-	pos  Pos
+	pos  Point
+	dir  Direction
+	path []Point
 }
 
 // A PriorityQueue implements heap.Interface and holds Items.
