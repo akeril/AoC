@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/kjabin/aoc2024/utils"
 )
@@ -14,10 +15,19 @@ func main() {
 		C: utils.ToInt(input[2]),
 	}
 	instructions := utils.ToIntArr(input[3], ",")
-	Solve(instructions, r)
+	a := 0
+	for n := len(instructions) - 1; n >= 0; n-- {
+		a <<= 3
+		for !slices.Equal(Solve(instructions, r, a), instructions[n:]) {
+			fmt.Println(n, a)
+			a++
+		}
+	}
+	fmt.Println(a)
 }
 
-func Solve(instructions []int, r Register) {
+func Solve(instructions []int, r Register, a int) []int {
+	r.A = a
 	i := 0
 	output := make([]int, 0)
 	for i < len(instructions) {
@@ -29,7 +39,7 @@ func Solve(instructions []int, r Register) {
 			i = jmp
 		}
 	}
-	fmt.Println(output)
+	return output
 }
 
 type Register struct {
