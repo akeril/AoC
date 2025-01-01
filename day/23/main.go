@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/kjabin/aoc2024/utils"
@@ -16,44 +17,12 @@ func main() {
 		adj[u] = append(adj[u], v)
 		adj[v] = append(adj[v], u)
 	}
-
-	queue := make([][]string, 0)
 	for u := range adj {
-		queue = append(queue, []string{u})
+		visited := make(map[string]bool)
+		components := make([]string, 0)
+		dfs(adj, visited, &components, u)
+		fmt.Println(strings.Join(components, ","))
 	}
-
-	conns := make([][]string, 0)
-	for len(queue) > 0 {
-		path := queue[0]
-		queue = queue[1:]
-
-		u := path[len(path)-1]
-
-		if len(path) > 4 {
-			continue
-		}
-
-		if len(path) == 4 && path[0] == u {
-			conns = append(conns, path)
-			continue
-		}
-
-		for _, v := range adj[u] {
-			queue = append(queue, Copy(path, v))
-		}
-	}
-
-	count := 0
-	for _, conn := range conns {
-		for _, u := range conn {
-			if u[0] == 't' {
-				count++
-				break
-			}
-		}
-	}
-	fmt.Println(count / 6)
-
 }
 
 func Copy(slice []string, p string) []string {
@@ -66,13 +35,32 @@ type Conn struct {
 	x, y, z string
 }
 
-func dfs(adj map[string][]string, visited map[string]bool, u string) {
+func dfs(adj map[string][]string, visited map[string]bool, components *[]string, u string) {
 	if visited[u] {
 		return
 	}
 	visited[u] = true
-	fmt.Printf("%s ", u)
+	*components = append(*components, u)
 	for _, v := range adj[u] {
-		dfs(adj, visited, v)
+		if Subset(adj[v], Keys(visited)) {
+			dfs(adj, visited, components, v)
+		}
 	}
+}
+
+func Keys[K comparable, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func Subset[K comparable](l, s []K) bool {
+	for _, x := range s {
+		if !slices.Contains(l, x) {
+			return false
+		}
+	}
+	return true
 }
