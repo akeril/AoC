@@ -13,7 +13,6 @@ func main() {
 	input := utils.ReadFile("input")
 	k := slices.Index(input, "")
 
-	// maintains values for each wire
 	wires := make(map[string]int)
 	for _, line := range input[:k] {
 		var key string
@@ -22,56 +21,43 @@ func main() {
 		wires[key] = value
 	}
 
-	// maintain formulas for each gate
 	deps := make(map[string]Gate)
-	// maintains calculation order
-	graph := make(map[string][]string)
 	for _, line := range input[k+1:] {
 		var w1, w2, w3, op string
 		fmt.Sscanf(line, "%3s %s %3s -> %3s", &w1, &op, &w2, &w3)
-		graph[w1] = append(graph[w1], w3)
-		graph[w2] = append(graph[w2], w3)
-		deps[w3] = Gate{w1, w2, op, 2}
+		deps[w3] = Gate{w1, w2, op}
 	}
 
-	queue := make([]string, 0)
-	for w := range wires {
-		queue = append(queue, w)
+	for w := range deps {
+		dfs(deps, wires, w)
 	}
 
-	for len(queue) > 0 {
-		w := queue[0]
-		queue = queue[1:]
-		if _, ok := wires[w]; !ok {
-			wires[w] = deps[w].Calc(wires)
-		}
-		for _, v := range graph[w] {
-			g := deps[v]
-			g.in--
-			deps[v] = g
+	fmt.Println(regVal(wires, 'z'))
+}
 
-			if g.in == 0 {
-				queue = append(queue, v)
-			}
+func regVal(wires map[string]int, c byte) int64 {
+	vals := make([]Wire, 0)
+	for w, v := range wires {
+		if w[0] == c {
+			vals = append(vals, Wire{w, v})
 		}
 	}
-
-	zwires := make([]Wire, 0)
-	for wire, value := range wires {
-		if wire[0] == 'z' {
-			zwires = append(zwires, Wire{wire, value})
-		}
-	}
-
-	slices.SortFunc(zwires, func(a, b Wire) int {
-		return -cmp.Compare(a.id, b.id)
-	})
-
+	slices.SortFunc(vals, func(a, b Wire) int { return -cmp.Compare(a.id, b.id) })
 	bits := ""
-	for _, wire := range zwires {
-		bits += strconv.Itoa(wire.value)
+	for _, v := range vals {
+		bits += strconv.Itoa(v.value)
 	}
-	fmt.Println(strconv.ParseInt(bits, 2, 64))
+	num, _ := strconv.ParseInt(bits, 2, 64)
+	return num
+}
+
+func dfs(deps map[string]Gate, wires map[string]int, w string) int {
+	if _, ok := wires[w]; !ok {
+		dfs(deps, wires, deps[w].w1)
+		dfs(deps, wires, deps[w].w2)
+		wires[w] = deps[w].Calc(wires)
+	}
+	return wires[w]
 }
 
 type Wire struct {
@@ -82,7 +68,6 @@ type Wire struct {
 type Gate struct {
 	w1, w2 string
 	op     string
-	in     int
 }
 
 func (g Gate) Calc(wires map[string]int) int {
