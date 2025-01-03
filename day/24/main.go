@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cmp"
 	"fmt"
 	"slices"
 	"strconv"
@@ -13,72 +12,66 @@ func main() {
 	input := utils.ReadFile("input")
 	k := slices.Index(input, "")
 
-	wires := make(map[string]int)
+	values := make(map[string]int)
 	for _, line := range input[:k] {
 		var key string
 		var value int
 		fmt.Sscanf(line, "%3s: %d", &key, &value)
-		wires[key] = value
+		values[key] = value
 	}
 
-	deps := make(map[string]Gate)
+	formulas := make(map[string]Formula)
 	for _, line := range input[k+1:] {
 		var w1, w2, w3, op string
 		fmt.Sscanf(line, "%3s %s %3s -> %3s", &w1, &op, &w2, &w3)
-		deps[w3] = Gate{w1, w2, op}
+		formulas[w3] = Formula{w1, w2, op}
 	}
 
-	for w := range deps {
-		dfs(deps, wires, w)
+	for w := range formulas {
+		values[w] = calc(values, formulas, w)
 	}
 
-	fmt.Println(regVal(wires, 'z'))
+	fmt.Println(reg(values, 'z'))
 }
 
-func regVal(wires map[string]int, c byte) int64 {
-	vals := make([]Wire, 0)
-	for w, v := range wires {
-		if w[0] == c {
-			vals = append(vals, Wire{w, v})
-		}
-	}
-	slices.SortFunc(vals, func(a, b Wire) int { return -cmp.Compare(a.id, b.id) })
+func reg(values map[string]int, c byte) int64 {
+	i := 0
 	bits := ""
-	for _, v := range vals {
-		bits += strconv.Itoa(v.value)
+	for {
+		reg := fmt.Sprintf("%c%02d", c, i)
+		if _, ok := values[reg]; !ok {
+			break
+		}
+		bits = strconv.Itoa(values[reg]) + bits
+		i += 1
 	}
 	num, _ := strconv.ParseInt(bits, 2, 64)
 	return num
 }
 
-func dfs(deps map[string]Gate, wires map[string]int, w string) int {
-	if _, ok := wires[w]; !ok {
-		dfs(deps, wires, deps[w].w1)
-		dfs(deps, wires, deps[w].w2)
-		wires[w] = deps[w].Calc(wires)
+func calc(values map[string]int, formulas map[string]Formula, w string) int {
+	if v, ok := values[w]; ok {
+		return v
 	}
-	return wires[w]
+	f := formulas[w]
+	values[w] = operate(f.op, calc(values, formulas, f.w1), calc(values, formulas, f.w2))
+	return values[w]
 }
 
-type Wire struct {
-	id    string
-	value int
-}
-
-type Gate struct {
-	w1, w2 string
-	op     string
-}
-
-func (g Gate) Calc(wires map[string]int) int {
-	switch g.op {
+func operate(op string, w1, w2 int) int {
+	switch op {
 	case "AND":
-		return wires[g.w1] & wires[g.w2]
+		return w1 & w2
 	case "OR":
-		return wires[g.w1] | wires[g.w2]
+		return w1 | w2
 	case "XOR":
-		return wires[g.w1] ^ wires[g.w2]
+		return w1 ^ w2
 	default:
 		return 0
 	}
+}
+
+type Formula struct {
+	w1, w2 string
+	op     string
 }
