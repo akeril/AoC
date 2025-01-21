@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	utl "github.com/kjabin/aoc2024/utils"
+	utl "github.com/akeril/aoc2024/utils"
 )
 
 func main() {
